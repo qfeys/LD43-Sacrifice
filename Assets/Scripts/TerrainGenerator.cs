@@ -24,7 +24,7 @@ public class TerrainGenerator : MonoBehaviour {
     // Use this for initialization
     void Start()
     {
-        platforms = MakeFlatPath(new Vector2(-8, 0), 80);
+        platforms = MakeFlatPath(new Vector2(-8, 0), 120);
         platforms.ForEach(p => p.Make(terrainPool));
     }
 
@@ -50,7 +50,7 @@ public class TerrainGenerator : MonoBehaviour {
         List<Platform> plfs = new List<Platform>();
         while (length > 0)
         {
-            switch (Random.Range(1, 3))
+            switch (Random.Range(0, 4))
             {
             case 0:     // flat land with a platform that sticks out (up or down)
                 {
@@ -98,7 +98,24 @@ public class TerrainGenerator : MonoBehaviour {
                 }
                 break;
             case 3:     // a wall you have to scale
-
+                {
+                    // 3 platforms: startpit, between (above start) and landing
+                    // Length of the startpit, between and landing
+                    int l1 = Random.Range(4, 8);
+                    int l2 = Random.Range(2, l1 - 2);
+                    int l3 = Random.Range(3, 5);
+                    // startpit goes down
+                    bool down = Random.value > 0.5f;
+                    // Height of the wall and the between
+                    int h1 = Random.Range(down ? 3 : 4, 6);
+                    int h2 = Random.Range(down ? 2 : 3, h1);
+                    plfs.Add(new Platform(start + new Vector2(0, down ? -1 : 0), new Vector2(l1, 2)));
+                    plfs.Add(new Platform(start + new Vector2(l1 - l2 - 2, h2 + (down ? -1: 0)), new Vector2(l2, 1)));
+                    plfs.Add(new Platform(start + new Vector2(l1, h1 + (down ? -1 : 0)), new Vector2(l3, h1 + 2)));
+                    Debug.Log("Climb: " + l1 + l2 + l3 + down + h1 + h2);
+                    start += new Vector2(l1 + l3, h1 + (down ? -1 : 0));
+                    length -= (l1 + l3);
+                }
                 break;
             }
         }
