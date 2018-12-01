@@ -10,6 +10,8 @@ public class Projectile : MonoBehaviour {
 
     public float lifetime;
 
+    public const float BLOB_VELOCITY = 10;
+
     public void Init(projectileType type)
     {
         this.type = type;
@@ -32,7 +34,7 @@ public class Projectile : MonoBehaviour {
             switch (type)
             {
             case projectileType.BLOB:
-                return 10;
+                return BLOB_VELOCITY;
             }
             return -50;
         } }

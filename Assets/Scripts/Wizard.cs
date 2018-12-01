@@ -104,4 +104,11 @@ public class Wizard : MonoBehaviour {
     {
         health -= damage;
     }
+
+    internal void AddHealth(float health)
+    {
+        this.health += health;
+        if (this.health > 100)
+            this.health = 100;
+    }
 }

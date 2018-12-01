@@ -119,7 +119,7 @@ public class TerrainGenerator : MonoBehaviour {
                 break;
             }
             if (Random.value > 0.75f)
-                new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.CHARGER);
+                new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.SHOOTER);
         }
 
 
@@ -211,6 +211,8 @@ public class TerrainGenerator : MonoBehaviour {
                         timeUntillNext = timeBetweenTwo;
                         GameObject enemy = enemyPool.GetNextObject();
                         enemy.transform.position = parent.position;
+                        if (parent.type == EnemyType.SHOOTER)
+                            enemy.GetComponent<Enemy>().projectiles = 3;
                         parent.amount--;
                         if (parent.amount <= 0)
                             Destroy(gameObject);
