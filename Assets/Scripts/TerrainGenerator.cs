@@ -118,6 +118,8 @@ public class TerrainGenerator : MonoBehaviour {
                 }
                 break;
             }
+            if (Random.value > 0.75f)
+                new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.CHARGER);
         }
 
 
@@ -153,6 +155,68 @@ public class TerrainGenerator : MonoBehaviour {
             bc.size = size;
             bc.offset = new Vector2(size.x / 2, -size.y / 2);
             go.transform.position = position;
+        }
+    }
+
+    class Spawner
+    {
+        public Vector2 position;
+        public int amount;
+        public enum EnemyType { CHARGER, SHOOTER, SHIELD}
+        public EnemyType type;
+        public int difficulty;
+
+        static ObjectPool enemyPool;
+
+        public Spawner(Vector2 position, int amount, EnemyType type, int difficulty = 1)
+        {
+            if (enemyPool == null)
+                enemyPool = GameObject.Find("EnemyPool").GetComponent<ObjectPool>();
+            this.position = position; this.amount = amount; this.type = type; this.difficulty = difficulty;
+            new GameObject("Spawner " + position.x).AddComponent<SpawnerGO>().parent = this;
+        }
+
+
+        class SpawnerGO : MonoBehaviour
+        {
+            const float DISTANCE_UNTILL_ACTIVATION = 25;
+            const float TIME_TO_SPAWN_ALL = 8;
+
+            public Spawner parent;
+            Transform player;
+            bool isactive = false;
+            float timeUntillNext;
+            float timeBetweenTwo;
+
+
+            private void Awake()
+            {
+                player = GameObject.Find("Wizard").transform;
+            }
+
+            private void Update()
+            {
+                if (isactive == false)
+                {
+                    if ((player.position.x - parent.position.x) < DISTANCE_UNTILL_ACTIVATION)
+                    {
+                        isactive = true;
+                        timeBetweenTwo = TIME_TO_SPAWN_ALL / parent.amount;
+                    }
+                } else
+                {
+                    timeUntillNext -= Time.deltaTime;
+                    if(timeUntillNext < 0)
+                    {
+                        timeUntillNext = timeBetweenTwo;
+                        GameObject enemy = enemyPool.GetNextObject();
+                        enemy.transform.position = parent.position;
+                        parent.amount--;
+                        if (parent.amount <= 0)
+                            Destroy(gameObject);
+                    }
+                }
+            }
         }
     }
 

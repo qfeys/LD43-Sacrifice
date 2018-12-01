@@ -1,11 +1,12 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Wizard : MonoBehaviour {
 
     public float speed = 5.0f;
-    public float jump = 8.0f;
+    public float jump = 5.0f;
     public float acc = 40.0f;
 
     public float health = 100;
@@ -97,5 +98,10 @@ public class Wizard : MonoBehaviour {
             abilityLeft.Fire(myridg.position, Camera.main.ScreenToWorldPoint(Input.mousePosition));
             cooldownLeft = abilityLeft.cooldown;
         }
+    }
+
+    internal void GetHit(float damage)
+    {
+        health -= damage;
     }
 }
