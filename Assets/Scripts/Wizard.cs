@@ -78,8 +78,19 @@ public class Wizard : MonoBehaviour {
 
         if (Input.GetButton("Up"))
         {
-            if(myridg.IsTouchingLayers())
-                myridg.velocity = new Vector2(myridg.velocity.x, jump);
+            if (myridg.IsTouchingLayers())
+            {
+                var points = new ContactPoint2D[2];
+                Vector2 normal;
+                if (2 == myridg.GetContacts(points))
+                {
+                    normal = (points[0].normal + points[1].normal) / 2;
+                } else
+                {
+                    normal = points[0].normal;
+                }
+                myridg.velocity = new Vector2(myridg.velocity.x, jump / 2) + normal.normalized * (jump / 2);
+            }
         }
         if (Input.GetButtonDown("Fire1") && cooldownLeft <= 0)
         {
