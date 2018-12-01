@@ -32,7 +32,7 @@ public class Wizard : MonoBehaviour {
             Rigidbody2D rgb = go.GetComponent<Rigidbody2D>();
             go.transform.position = pos;
             Vector2 dir = (trgt - pos).normalized;
-            rgb.velocity = dir * go.GetComponent<Projectile>().velocity;
+            rgb.velocity = dir * go.GetComponent<Projectile>().velocity + myridg.velocity;
             health -= 2;
         });
 	}

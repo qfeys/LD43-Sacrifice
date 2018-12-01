@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,7 +24,7 @@ public class Projectile : MonoBehaviour {
     void Update () {
         lifetime -= Time.deltaTime;
         if (lifetime < 0)
-            gameObject.SetActive(false);
+            EndOfLife();
 	}
 
     public float velocity { get
@@ -35,4 +36,18 @@ public class Projectile : MonoBehaviour {
             }
             return -50;
         } }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.collider.gameObject.layer == LayerMask.NameToLayer("Enemies"))
+        {
+            collision.collider.GetComponent<Enemy>().GetHit();
+            EndOfLife();
+        }
+    }
+
+    private void EndOfLife()
+    {
+        gameObject.SetActive(false);
+    }
 }
