@@ -31,7 +31,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     int currentLevel = 0;
     List<System.Tuple<int, Difficulty>> levels = new List<System.Tuple<int, Difficulty>>() {
-        new System.Tuple<int, Difficulty>(70, Difficulty.V_EASY),
+        new System.Tuple<int, Difficulty>(60, Difficulty.V_EASY),
         new System.Tuple<int, Difficulty>(100, Difficulty.EASY),
         new System.Tuple<int, Difficulty>(200, Difficulty.V_EASY),
         new System.Tuple<int, Difficulty>(100, Difficulty.MODERATE),
@@ -378,8 +378,8 @@ public class TerrainGenerator : MonoBehaviour {
 
         class SpawnerGO : MonoBehaviour
         {
-            const float DISTANCE_UNTILL_ACTIVATION = 25;
-            const float TIME_TO_SPAWN_ALL = 8;
+            const float DISTANCE_UNTILL_ACTIVATION = 23;
+            const float TIME_TO_SPAWN_ALL = 7;
 
             public Spawner parent;
             Transform player;

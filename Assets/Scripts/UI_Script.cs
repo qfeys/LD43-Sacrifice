@@ -29,6 +29,11 @@ public class UI_Script : MonoBehaviour {
         levelDifficulty.GetComponent<TextMeshProUGUI>().text = info.Item2;
     }
 
+    private void Start()
+    {
+        Refresh_menu();
+    }
+
     // Update is called once per frame
     void Update () {
         blood_slider.value = wizard.health;
