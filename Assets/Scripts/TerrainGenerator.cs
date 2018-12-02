@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour {
@@ -9,10 +10,9 @@ public class TerrainGenerator : MonoBehaviour {
 
     List<Platform> platforms;
 
-    const float MIN_PLATF_LENGTH = 2;
-    const float MAX_PLATF_LENGTH = 8;
-    const float MIN_PLATF_HEIGHT = 2;
-    const float MAX_PLATF_HEIGHT = 4;
+    delegate void Generator(ref Vector2 start, ref float length, List<Platform> plfs);
+    enum Difficulty { V_EASY = 0, EASY = 1, MODERATE = 2, HARD = 3 }
+    List<System.Tuple<Generator, Difficulty>> generators;
 
 
     void Awake()
@@ -24,44 +24,72 @@ public class TerrainGenerator : MonoBehaviour {
     // Use this for initialization
     void Start()
     {
-        platforms = MakeFlatPath(new Vector2(0, 0), 200);
+        generators = new List<System.Tuple<Generator, Difficulty>>() {
+            new System.Tuple<Generator, Difficulty>(FlatShort, Difficulty.V_EASY),
+            new System.Tuple<Generator, Difficulty>(SmallPit, Difficulty.EASY),
+            new System.Tuple<Generator, Difficulty>(WidePit, Difficulty.EASY),
+            new System.Tuple<Generator, Difficulty>(ClimableWall, Difficulty.HARD),
+            new System.Tuple<Generator, Difficulty>(NoReturnDrop, Difficulty.MODERATE),
+            new System.Tuple<Generator, Difficulty>(StairsRight, Difficulty.MODERATE)
+        };
+
+        //platforms = MakeFlatPath(new Vector2(0, 0), 100);
+        platforms = MakeLevel(new Vector2(0, 0), 100, Difficulty.HARD);
         platforms.ForEach(p => p.Make(terrainPool));
     }
 
-    [System.Obsolete]
-    List<Platform> MakeHorizontalPath(Vector2 start, float length)
+    List<Platform> MakeLevel(Vector2 start, float length, Difficulty levelDifficulty)
     {
         List<Platform> plfs = new List<Platform>();
+        StagingGround(ref start, ref length, plfs);
+
+        int totalWeight = generators.Sum(tpl => GetDifficultyWeight(levelDifficulty, tpl.Item2));
+        Debug.Log("Total weight: " + totalWeight);
+
         while(length > 0)
         {
-            float x = Mathf.Round(Random.Range(MIN_PLATF_LENGTH, MAX_PLATF_LENGTH));
-            float y = Mathf.Round(Random.Range(MIN_PLATF_HEIGHT, MAX_PLATF_HEIGHT));
-            plfs.Add(new Platform(start, new Vector2(x, y)));
-            float xx = Random.Range(0, 4);
-            float yy = Random.Range(-1, 2);
-            start += new Vector2(x + xx, yy);
-            length -= (x + xx);
+            int randomNumber = Random.Range(0, totalWeight);
+
+            Generator selectedGenerator = null;
+            foreach (System.Tuple<Generator, Difficulty> generator in generators)
+            {
+                int generatorWeight = GetDifficultyWeight(levelDifficulty, generator.Item2);
+                if (randomNumber <= generatorWeight)
+                {
+                    selectedGenerator = generator.Item1;
+                    break;
+                }
+                randomNumber -= generatorWeight;
+            }
+            selectedGenerator(ref start, ref length, plfs);
+            GenerateSpawner(start, levelDifficulty);
         }
+        EndGround(ref start, ref length, plfs);
         return plfs;
+    }
+
+    int GetDifficultyWeight(Difficulty levelDifficulty, Difficulty generatorDifficulty)
+    {
+        return Mathf.Clamp(3 - Mathf.Abs(levelDifficulty - generatorDifficulty), 0, 3);
     }
 
     List<Platform> MakeFlatPath(Vector2 start, float length)
     {
         List<Platform> plfs = new List<Platform>();
         StagingGround(ref start, ref length, plfs);
+        WidePit(ref start, ref length, plfs);
         while (length > 0)
         {
-            StairsRight(ref start, ref length, plfs);
-            switch (Random.Range(0, 5))
+            switch (Random.Range(5, 6))
             {
             case 0:     // flat land with a platform that sticks out (up or down)
-                    FlatShort(ref start, ref length, plfs);
+                FlatShort(ref start, ref length, plfs);
                 break;
             case 1:     // a small pit you have to jump over, maybe with a hight difference
-                    SmallPit(ref start, ref length, plfs);
+                SmallPit(ref start, ref length, plfs);
                 break;
             case 2:     // a wide pit you have to jump over
-                    WidePit(ref start, ref length, plfs);
+                WidePit(ref start, ref length, plfs);
                 break;
             case 3:     // a wall you have to scale
                 ClimableWall(ref start, ref length, plfs);
@@ -69,18 +97,27 @@ public class TerrainGenerator : MonoBehaviour {
             case 4:
                 NoReturnDrop(ref start, ref length, plfs);
                 break;
+            case 5:
+                StairsRight(ref start, ref length, plfs);
+                break;
             }
-            float r = Random.value;
-            if (r > 0.99f)
-                new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.CHARGER);
-            else if (r > 0.75f)
-                new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.SHOOTER);
-            else if (r > 0.25f)
-                new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.SHIELD);
+            GenerateSpawner(start);
         }
+        EndGround(ref start, ref length, plfs);
 
 
         return plfs;
+    }
+
+    private static void GenerateSpawner(Vector2 start, Difficulty difficulty = Difficulty.EASY)
+    {
+        float r = Random.value + (int)difficulty * .2f;
+        if (r < 0.6f)
+            new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.CHARGER);
+        else if (r < 1.1f)
+            new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.SHOOTER);
+        else
+            new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.SHIELD);
     }
 
     /// <summary>
@@ -89,7 +126,7 @@ public class TerrainGenerator : MonoBehaviour {
     private static void StagingGround(ref Vector2 start, ref float length, List<Platform> plfs)
     {
         // There are 3 platforms: Starting wall, safe ground, and the bit lower starting ground
-        plfs.Add(new Platform(start + new Vector2(-5,10), new Vector2(5, 13)));
+        plfs.Add(new Platform(start + new Vector2(-5, 10), new Vector2(5, 13)));
         plfs.Add(new Platform(start, new Vector2(8, 4)));
         plfs.Add(new Platform(start + new Vector2(8, -3), new Vector2(5, 2)));
         //Debug.Log("Flat: " + l1 + l2 + l3 + up);
@@ -98,14 +135,27 @@ public class TerrainGenerator : MonoBehaviour {
     }
 
     /// <summary>
+    /// Long flat land with a wall on the front to start on
+    /// </summary>
+    private static void EndGround(ref Vector2 start, ref float length, List<Platform> plfs)
+    {
+        // There are 2 platforms: End platform and end wall
+        plfs.Add(new Platform(start, new Vector2(8, 2)));
+        plfs.Add(new Platform(start + new Vector2(8, 10), new Vector2(5, 12)));
+        //Debug.Log("Flat: " + l1 + l2 + l3 + up);
+        length -= (8);
+    }
+
+    /// <summary>
     /// flat land with a platform that sticks out (up or down)
+    /// V Easy
     /// </summary>
     private static void FlatShort(ref Vector2 start, ref float length, List<Platform> plfs)
     {
         // There are 3 platforms, so determine the length of these platforms
-        int l1 = Random.Range(4, 10);
-        int l2 = Random.Range(4, 10);
-        int l3 = Random.Range(4, 10);
+        int l1 = Random.Range(4, 9);
+        int l2 = Random.Range(4, 7);
+        int l3 = Random.Range(4, 9);
         // Does the platform go up or down?
         bool up = Random.value > 0.5f;
         plfs.Add(new Platform(start, new Vector2(l1, up ? 2 : 3)));
@@ -118,6 +168,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     /// <summary>
     /// a small pit you have to jump over, maybe with a hight difference
+    /// Easy
     /// </summary>
     private static void SmallPit(ref Vector2 start, ref float length, List<Platform> plfs)
     {
@@ -136,6 +187,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     /// <summary>
     /// a wide pit you have to jump over
+    /// Easy
     /// </summary>
     private static void WidePit(ref Vector2 start, ref float length, List<Platform> plfs)
     {
@@ -153,6 +205,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     /// <summary>
     /// a wall you have to scale
+    /// Hard
     /// </summary>
     private static void ClimableWall(ref Vector2 start, ref float length, List<Platform> plfs)
     {
@@ -176,6 +229,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     /// <summary>
     /// A drop that is hard to scale back up
+    /// Moderate
     /// </summary>
     private static void NoReturnDrop(ref Vector2 start, ref float length, List<Platform> plfs)
     {
@@ -197,6 +251,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     /// <summary>
     /// A couple of stairs to climb to the right
+    /// Moderate
     /// </summary>
     private static void StairsRight(ref Vector2 start, ref float length, List<Platform> plfs)
     {
@@ -290,10 +345,11 @@ public class TerrainGenerator : MonoBehaviour {
             {
                 if (isactive == false)
                 {
-                    if ((player.position.x - parent.position.x) < DISTANCE_UNTILL_ACTIVATION)
+                    if (Mathf.Abs(player.position.x - parent.position.x) < DISTANCE_UNTILL_ACTIVATION)
                     {
                         isactive = true;
                         timeBetweenTwo = TIME_TO_SPAWN_ALL / parent.amount;
+                        Debug.Log("Activating spawner: " + gameObject +" because distance = "+ (player.position.x - parent.position.x));
                     }
                 } else
                 {

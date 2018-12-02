@@ -29,6 +29,7 @@ public class Enemy : MonoBehaviour {
     public Collider2D FrontBumper;
     public Collider2D BackBumper;
     bool isGrounded = false;
+    bool gettingUnstuck = false;
 
     Transform target;
 
@@ -142,6 +143,15 @@ public class Enemy : MonoBehaviour {
         // Movement
         {
             float h_vel = myridg.velocity.x;
+            // failsafe to get unstuck
+            if (myridg.velocity == Vector2.zero)
+                gettingUnstuck = true;
+            if (gettingUnstuck == true)
+            {
+                move = -move;
+                if (Mathf.Abs(h_vel) > speed / 2)
+                    gettingUnstuck = false;
+            }
             if (move == 1)
             {
                 if (h_vel < speed)
@@ -258,7 +268,7 @@ public class Enemy : MonoBehaviour {
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if (collision.collider.gameObject.layer == 13)
+        if (collision.collider.gameObject.layer == LayerMask.NameToLayer("Terrain"))
             isGrounded = true;
     }
 }

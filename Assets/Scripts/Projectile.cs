@@ -66,6 +66,8 @@ public class Projectile : MonoBehaviour {
             }catch(NullReferenceException e)
             {
                 Debug.LogError("That null eference error: projectile: " + gameObject + ", shield:" + collision.collider.gameObject);
+                Enemy parent = collision.collider.gameObject.transform.parent.GetComponent<Enemy>();
+                Debug.LogError("Enemy: " + parent + " Shield level: " + parent.shieldMagicLeft);
             }
             EndOfLife();
         }
