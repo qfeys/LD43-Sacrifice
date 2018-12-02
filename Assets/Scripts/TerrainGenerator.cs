@@ -12,19 +12,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     delegate void Generator(ref Vector2 start, ref float length, List<Platform> plfs);
     enum Difficulty { V_EASY = 0, EASY = 1, MODERATE = 2, HARD = 3 }
-    List<System.Tuple<Generator, Difficulty>> generators;
-
-
-    void Awake()
-    {
-        terrainPool = GetComponent<ObjectPool>();
-        Random.InitState(20);
-    }
-
-    // Use this for initialization
-    void Start()
-    {
-        generators = new List<System.Tuple<Generator, Difficulty>>() {
+    List<System.Tuple<Generator, Difficulty>> generators = new List<System.Tuple<Generator, Difficulty>>() {
             new System.Tuple<Generator, Difficulty>(FlatShort, Difficulty.V_EASY),
             new System.Tuple<Generator, Difficulty>(SmallPit, Difficulty.EASY),
             new System.Tuple<Generator, Difficulty>(WidePit, Difficulty.EASY),
@@ -33,9 +21,53 @@ public class TerrainGenerator : MonoBehaviour {
             new System.Tuple<Generator, Difficulty>(StairsRight, Difficulty.MODERATE)
         };
 
-        //platforms = MakeFlatPath(new Vector2(0, 0), 100);
-        platforms = MakeLevel(new Vector2(0, 0), 100, Difficulty.HARD);
+
+    void Awake()
+    {
+        terrainPool = GetComponent<ObjectPool>();
+        Random.InitState(20);
+    }
+
+    int currentLevel = 4;
+    List<System.Tuple<int, Difficulty>> levels = new List<System.Tuple<int, Difficulty>>() {
+        new System.Tuple<int, Difficulty>(100, Difficulty.V_EASY),
+        new System.Tuple<int, Difficulty>(100, Difficulty.EASY),
+        new System.Tuple<int, Difficulty>(200, Difficulty.V_EASY),
+        new System.Tuple<int, Difficulty>(100, Difficulty.MODERATE),
+        new System.Tuple<int, Difficulty>(200, Difficulty.EASY),
+        new System.Tuple<int, Difficulty>(200, Difficulty.MODERATE),
+        new System.Tuple<int, Difficulty>(100, Difficulty.HARD),
+        new System.Tuple<int, Difficulty>(300, Difficulty.EASY),
+        new System.Tuple<int, Difficulty>(200, Difficulty.HARD),
+        new System.Tuple<int, Difficulty>(300, Difficulty.MODERATE)
+    };
+
+    public void GenerateNextLevel()
+    {
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            transform.GetChild(i).gameObject.SetActive(false);
+        }
+
+        platforms = MakeLevel(new Vector2(0, 0), levels[currentLevel].Item1, levels[currentLevel].Item2);
         platforms.ForEach(p => p.Make(terrainPool));
+        currentLevel++;
+    }
+
+    public System.Tuple<string,string> InfoNextLevel()
+    {
+        switch (levels[currentLevel].Item2)
+        {
+        case Difficulty.V_EASY:
+            return new System.Tuple<string, string>(levels[currentLevel].Item1.ToString(), "Very easy");
+        case Difficulty.EASY:
+            return new System.Tuple<string, string>(levels[currentLevel].Item1.ToString(), "Easy");
+        case Difficulty.MODERATE:
+            return new System.Tuple<string, string>(levels[currentLevel].Item1.ToString(), "Moderate");
+        case Difficulty.HARD:
+            return new System.Tuple<string, string>(levels[currentLevel].Item1.ToString(), "Hard");
+        }
+        throw new System.Exception("Bad Difficulty");
     }
 
     List<Platform> MakeLevel(Vector2 start, float length, Difficulty levelDifficulty)

@@ -34,6 +34,9 @@ sysinfo.txt
 *.apk
 *.unitypackage
 
+# Unity packages
+Packages/
+
 # =========================
 # Operating System Files
 # =========================
