@@ -9,6 +9,7 @@ public class UI_Script : MonoBehaviour {
     public Slider blood_slider;
     public GameObject wizardGO;
     public GameObject menu;
+    public GameObject gameOverScreen;
     public GameObject levelLength;
     public GameObject levelDifficulty;
 
@@ -21,7 +22,7 @@ public class UI_Script : MonoBehaviour {
         generator = GameObject.Find("TerrainGenerator").GetComponent<TerrainGenerator>();
     }
 
-    private void OnEnable()
+    public void Refresh_menu()
     {
         var info = generator.InfoNextLevel();
         levelLength.GetComponent<TextMeshProUGUI>().text = info.Item1;
@@ -31,6 +32,8 @@ public class UI_Script : MonoBehaviour {
     // Update is called once per frame
     void Update () {
         blood_slider.value = wizard.health;
+        if (wizard.health <= 0)
+            GameOverSeqence();
 	}
 
     public void StartLevel()
@@ -39,5 +42,32 @@ public class UI_Script : MonoBehaviour {
         wizardGO.transform.position = new Vector3(1, 2, 0);
         wizardGO.SetActive(true);
         generator.GenerateNextLevel();
+    }
+
+    private void GameOverSeqence()
+    {
+        wizard.gameObject.SetActive(false);
+        int treasures = generator.GetCurrentLevel();
+        gameOverScreen.SetActive(true);
+        if (treasures == 0)
+            gameOverScreen.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "You managed to find no Treasures. Unfortunatly...";
+        else if (treasures == 1)
+            gameOverScreen.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "You managed to find just 1 Treasure";
+        else
+            gameOverScreen.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "You managed to find " + treasures + " Treasures. Congratulations!";
+    }
+
+    public void RestartGame()
+    {
+        wizard.health = 100;
+        generator.ResetLevel();
+        gameOverScreen.SetActive(false);
+        menu.SetActive(true);
+        Refresh_menu();
+        GameObject.Find("EnemyPool").GetComponent<ObjectPool>().DeactivateAllObjects();
+        GameObject.Find("DropsSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
+        GameObject.Find("EnemyProjectileSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
+        GameObject.Find("ProjectileSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
+        TerrainGenerator.Spawner.RemoveAllSpawners();
     }
 }

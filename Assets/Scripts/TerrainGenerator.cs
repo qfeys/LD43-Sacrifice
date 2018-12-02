@@ -7,6 +7,7 @@ public class TerrainGenerator : MonoBehaviour {
 
 
     ObjectPool terrainPool;
+    public GameObject chest;
 
     List<Platform> platforms;
 
@@ -28,9 +29,9 @@ public class TerrainGenerator : MonoBehaviour {
         Random.InitState(20);
     }
 
-    int currentLevel = 4;
+    int currentLevel = 0;
     List<System.Tuple<int, Difficulty>> levels = new List<System.Tuple<int, Difficulty>>() {
-        new System.Tuple<int, Difficulty>(100, Difficulty.V_EASY),
+        new System.Tuple<int, Difficulty>(70, Difficulty.V_EASY),
         new System.Tuple<int, Difficulty>(100, Difficulty.EASY),
         new System.Tuple<int, Difficulty>(200, Difficulty.V_EASY),
         new System.Tuple<int, Difficulty>(100, Difficulty.MODERATE),
@@ -44,14 +45,12 @@ public class TerrainGenerator : MonoBehaviour {
 
     public void GenerateNextLevel()
     {
-        for (int i = 0; i < transform.childCount; i++)
-        {
-            transform.GetChild(i).gameObject.SetActive(false);
-        }
+        terrainPool.DeactivateAllObjects();
 
         platforms = MakeLevel(new Vector2(0, 0), levels[currentLevel].Item1, levels[currentLevel].Item2);
         platforms.ForEach(p => p.Make(terrainPool));
         currentLevel++;
+        Debug.Log("Level is now: " + currentLevel);
     }
 
     public System.Tuple<string,string> InfoNextLevel()
@@ -70,13 +69,22 @@ public class TerrainGenerator : MonoBehaviour {
         throw new System.Exception("Bad Difficulty");
     }
 
+    public int GetCurrentLevel()
+    {
+        return currentLevel - 1;
+    }
+
+    public void ResetLevel()
+    {
+        currentLevel = 0;
+    }
+
     List<Platform> MakeLevel(Vector2 start, float length, Difficulty levelDifficulty)
     {
         List<Platform> plfs = new List<Platform>();
         StagingGround(ref start, ref length, plfs);
 
         int totalWeight = generators.Sum(tpl => GetDifficultyWeight(levelDifficulty, tpl.Item2));
-        Debug.Log("Total weight: " + totalWeight);
 
         while(length > 0)
         {
@@ -169,13 +177,16 @@ public class TerrainGenerator : MonoBehaviour {
     /// <summary>
     /// Long flat land with a wall on the front to start on
     /// </summary>
-    private static void EndGround(ref Vector2 start, ref float length, List<Platform> plfs)
+    private void EndGround(ref Vector2 start, ref float length, List<Platform> plfs)
     {
-        // There are 2 platforms: End platform and end wall
+        // There are 3 platforms: End platform, wall ad podium
         plfs.Add(new Platform(start, new Vector2(8, 2)));
         plfs.Add(new Platform(start + new Vector2(8, 10), new Vector2(5, 12)));
+        plfs.Add(new Platform(start + new Vector2(3, 1), new Vector2(2, 1)));
         //Debug.Log("Flat: " + l1 + l2 + l3 + up);
         length -= (8);
+
+        chest.transform.position = start + new Vector2(3.5f, 1);
     }
 
     /// <summary>
@@ -276,7 +287,7 @@ public class TerrainGenerator : MonoBehaviour {
         plfs.Add(new Platform(start, new Vector2(l1, h1 + 1)));
         plfs.Add(new Platform(start + new Vector2(l1, -h1), new Vector2(l2, 2)));
         plfs.Add(new Platform(start + new Vector2(l1 + l2, -h1 + h2), new Vector2(l3, h2 == -1 ? 1 : 2)));
-        Debug.Log("No return drop: " + l1 + l2 + l2 + h1 + h2);
+        //Debug.Log("No return drop: " + l1 + l2 + l2 + h1 + h2);
         start += new Vector2(l1 + l2 + l3, -h1 + h2);
         length -= (l1 + l2 + l3);
     }
@@ -337,7 +348,7 @@ public class TerrainGenerator : MonoBehaviour {
         }
     }
 
-    class Spawner
+    public class Spawner
     {
         public Vector2 position;
         public int amount;
@@ -346,13 +357,22 @@ public class TerrainGenerator : MonoBehaviour {
         public int difficulty;
 
         static ObjectPool enemyPool;
+        static List<SpawnerGO> spawners = new List<SpawnerGO>();
 
         public Spawner(Vector2 position, int amount, EnemyType type, int difficulty = 1)
         {
             if (enemyPool == null)
                 enemyPool = GameObject.Find("EnemyPool").GetComponent<ObjectPool>();
             this.position = position; this.amount = amount; this.type = type; this.difficulty = difficulty;
-            new GameObject("Spawner " + position.x).AddComponent<SpawnerGO>().parent = this;
+            var spawnergo = new GameObject("Spawner " + position.x).AddComponent<SpawnerGO>();
+            spawnergo.parent = this;
+            spawners.Add(spawnergo);
+        }
+
+        public static void RemoveAllSpawners()
+        {
+            spawners.ForEach(go => Destroy(go.gameObject));
+            spawners = new List<SpawnerGO>();
         }
 
 
@@ -381,7 +401,6 @@ public class TerrainGenerator : MonoBehaviour {
                     {
                         isactive = true;
                         timeBetweenTwo = TIME_TO_SPAWN_ALL / parent.amount;
-                        Debug.Log("Activating spawner: " + gameObject +" because distance = "+ (player.position.x - parent.position.x));
                     }
                 } else
                 {
@@ -406,7 +425,10 @@ public class TerrainGenerator : MonoBehaviour {
                         }
                         parent.amount--;
                         if (parent.amount <= 0)
+                        {
+                            spawners.Remove(this);
                             Destroy(gameObject);
+                        }
                     }
                 }
             }

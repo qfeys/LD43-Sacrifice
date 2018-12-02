@@ -36,4 +36,9 @@ public class ObjectPool : MonoBehaviour
         pool.Add(newGO);
         return newGO;
     }
+
+    public void DeactivateAllObjects()
+    {
+        pool.ForEach(go => go.SetActive(false));
+    }
 }
