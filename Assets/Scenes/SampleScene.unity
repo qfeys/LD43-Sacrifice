@@ -624,7 +624,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485a1f87a72843b40adaf5561fe16c00, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 1803353257452748, guid: dfef78fa76e7df14e97d1953e11a4e72, type: 2}
+  prefab: {fileID: 1225874914429466, guid: dfef78fa76e7df14e97d1953e11a4e72, type: 2}
 --- !u!4 &948597429
 Transform:
   m_ObjectHideFlags: 0
@@ -759,7 +759,7 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
-  m_Size: {x: 0.6, y: 1}
+  m_Size: {x: 0.6, y: 0.99}
   m_Direction: 0
 --- !u!212 &1324387317
 SpriteRenderer:
