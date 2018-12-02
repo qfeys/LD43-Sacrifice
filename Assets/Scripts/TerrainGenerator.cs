@@ -312,7 +312,7 @@ public class TerrainGenerator : MonoBehaviour {
         }
         plfs.Add(new Platform(start + new Vector2(2, -1), new Vector2(totalLength + 2, 2)));
         plfs.Add(new Platform(start + new Vector2(2 + totalLength + 2, steps), new Vector2(2, steps + 3)));
-        Debug.Log("Stars Right: " + steps + ", " + totalLength);
+        // Debug.Log("Stars Right: " + steps + ", " + totalLength);
         start += new Vector2(totalLength + 6, steps);
         length -= (totalLength + 6);
     }

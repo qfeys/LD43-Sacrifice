@@ -51,6 +51,7 @@ public class UI_Script : MonoBehaviour {
 
     private void GameOverSeqence()
     {
+        TerrainGenerator.Spawner.RemoveAllSpawners();
         wizard.gameObject.SetActive(false);
         int treasures = generator.GetCurrentLevel();
         gameOverScreen.SetActive(true);
@@ -73,6 +74,5 @@ public class UI_Script : MonoBehaviour {
         GameObject.Find("DropsSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
         GameObject.Find("EnemyProjectileSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
         GameObject.Find("ProjectileSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
-        TerrainGenerator.Spawner.RemoveAllSpawners();
     }
 }

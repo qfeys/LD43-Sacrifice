@@ -16,10 +16,9 @@ public class Wizard : MonoBehaviour {
     Ability abilityLeft;
     Ability abilityRight;
     Ability abilitySpace;
+    Ability abilityShift;
 
-    float cooldownLeft;
-    float cooldownRight;
-    float cooldownSpace;
+    float shiftCooldown;
     bool shieldActive;
 
     Rigidbody2D myridg;
@@ -32,16 +31,26 @@ public class Wizard : MonoBehaviour {
     }
 
     // Use this for initialization
-    void Start () {
-        ObjectPool op = GameObject.Find("ProjectileSpawner").GetComponent<ObjectPool>();
+    void Start ()
+    {
+        ObjectPool projectileSpawner = GameObject.Find("ProjectileSpawner").GetComponent<ObjectPool>();
+        ObjectPool bombSpawner = GameObject.Find("BombSpawner").GetComponent<ObjectPool>();
         abilityLeft = new Ability((Vector2 pos, Vector2 trgt) =>
         {
-            GameObject go = op.GetNextObject();
+            GameObject go = projectileSpawner.GetNextObject();
             Rigidbody2D rgb = go.GetComponent<Rigidbody2D>();
             go.transform.position = pos;
             Vector2 dir = (trgt - pos).normalized;
             rgb.velocity = dir * go.GetComponent<Projectile>().velocity + myridg.velocity;
             health -= 2;
+        }); abilityRight = new Ability((Vector2 pos, Vector2 trgt) =>
+        {
+            GameObject go = bombSpawner.GetNextObject();
+            Rigidbody2D rgb = go.GetComponent<Rigidbody2D>();
+            go.transform.position = pos;
+            Vector2 dir = (trgt - pos).normalized;
+            rgb.velocity = dir * go.GetComponent<ProjectileBomb>().velocity + myridg.velocity;
+            health -= 10;
         });
         abilitySpace = new Ability((Vector2 pos, Vector2 trgt) =>
         {
@@ -51,7 +60,13 @@ public class Wizard : MonoBehaviour {
             Vector2 dir = (trgt - pos).normalized;
             shield.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 45);
         });
-	}
+        abilityShift = new Ability((Vector2 pos, Vector2 trgt) =>
+        {
+            myridg.velocity = new Vector2(myridg.velocity.x, myridg.velocity.y + jump * 2);
+            health -= 10;
+            shiftCooldown = 1;
+        });
+    }
 	
 	// Update is called once per frame
 	void Update ()
@@ -111,21 +126,23 @@ public class Wizard : MonoBehaviour {
 
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        if (Input.GetButtonDown("Fire1") && cooldownLeft <= 0)
+        if (Input.GetButtonDown("Fire1"))
         {
             abilityLeft.Fire(myridg.position, mousePos);
-            cooldownLeft = abilityLeft.cooldown;
         }
-        if (Input.GetButtonDown("Fire2") && cooldownLeft <= 0)
+        if (Input.GetButtonDown("Fire2"))
         {
             abilityRight.Fire(myridg.position, mousePos);
-            cooldownLeft = abilityLeft.cooldown;
         }
-        if (Input.GetButton("Fire3") && cooldownLeft <= 0)
+        if (Input.GetButton("Fire3"))
         {
             abilitySpace.Fire(myridg.position, mousePos);
-            cooldownLeft = abilityLeft.cooldown;
         }
+        if (Input.GetButton("Fire4") && shiftCooldown <= 0)
+        {
+            abilityShift.Fire(myridg.position, mousePos);
+        }
+        shiftCooldown -= Time.deltaTime;
 
         if (shieldActive == false)
             shield.SetActive(false);

@@ -4,20 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Projectile : MonoBehaviour {
-
-    public enum projectileType { BLOB}
-    projectileType type = projectileType.BLOB;
-
+    
     public float lifetime = 2;
     public float damage = 10;
     float lifeLeft;
 
     public const float BLOB_VELOCITY = 10;
-
-    public void Init(projectileType type)
-    {
-        this.type = type;
-    }
 
     private void OnEnable()
     {
@@ -31,15 +23,7 @@ public class Projectile : MonoBehaviour {
             EndOfLife();
 	}
 
-    public float velocity { get
-        {
-            switch (type)
-            {
-            case projectileType.BLOB:
-                return BLOB_VELOCITY;
-            }
-            return -50;
-        } }
+    public float velocity { get { return BLOB_VELOCITY; } }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
