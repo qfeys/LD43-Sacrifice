@@ -118,7 +118,10 @@ public class TerrainGenerator : MonoBehaviour {
                 }
                 break;
             }
-            if (Random.value > 0.75f)
+            float r = Random.value;
+            if (r > 0.75f)
+                new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.CHARGER);
+            else if (r > 0.5f)
                 new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.SHOOTER);
         }
 

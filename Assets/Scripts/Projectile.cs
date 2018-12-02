@@ -8,7 +8,8 @@ public class Projectile : MonoBehaviour {
     public enum projectileType { BLOB}
     projectileType type = projectileType.BLOB;
 
-    public float lifetime;
+    public float lifetime = 2;
+    float lifeLeft;
 
     public const float BLOB_VELOCITY = 10;
 
@@ -19,13 +20,13 @@ public class Projectile : MonoBehaviour {
 
     private void OnEnable()
     {
-        lifetime = 2;
+        lifeLeft = lifetime;
     }
 
     // Update is called once per frame
     void Update () {
-        lifetime -= Time.deltaTime;
-        if (lifetime < 0)
+        lifeLeft -= Time.deltaTime;
+        if (lifeLeft < 0)
             EndOfLife();
 	}
 
@@ -41,9 +42,14 @@ public class Projectile : MonoBehaviour {
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.collider.gameObject.layer == LayerMask.NameToLayer("Enemies"))
+        if (collision.collider.gameObject.layer == LayerMask.NameToLayer("Enemies"))
         {
             collision.collider.GetComponent<Enemy>().GetHit();
+            EndOfLife();
+        }
+        if (collision.collider.gameObject.layer == LayerMask.NameToLayer("Wizard"))
+        {
+            collision.collider.GetComponent<Wizard>().GetHit(10);
             EndOfLife();
         }
     }
