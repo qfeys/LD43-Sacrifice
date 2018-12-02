@@ -60,7 +60,13 @@ public class Projectile : MonoBehaviour {
         }
         if (collision.collider.gameObject.layer == LayerMask.NameToLayer("EnemyShield"))
         {
-            collision.collider.GetComponentInParent<Enemy>().ShieldHit();
+            try
+            {
+                collision.collider.GetComponentInParent<Enemy>().ShieldHit();
+            }catch(NullReferenceException e)
+            {
+                Debug.LogError("That null eference error: projectile: " + gameObject + ", shield:" + collision.collider.gameObject);
+            }
             EndOfLife();
         }
     }
