@@ -9,6 +9,7 @@ public class Projectile : MonoBehaviour {
     projectileType type = projectileType.BLOB;
 
     public float lifetime = 2;
+    public float damage = 10;
     float lifeLeft;
 
     public const float BLOB_VELOCITY = 10;
@@ -49,7 +50,17 @@ public class Projectile : MonoBehaviour {
         }
         if (collision.collider.gameObject.layer == LayerMask.NameToLayer("Wizard"))
         {
-            collision.collider.GetComponent<Wizard>().GetHit(10);
+            collision.collider.GetComponent<Wizard>().GetHit(damage);
+            EndOfLife();
+        }
+        if (collision.collider.gameObject.layer == LayerMask.NameToLayer("Shield"))
+        {
+            collision.collider.GetComponentInParent<Wizard>().ShieldHit(damage);
+            EndOfLife();
+        }
+        if (collision.collider.gameObject.layer == LayerMask.NameToLayer("EnemyShield"))
+        {
+            collision.collider.GetComponentInParent<Enemy>().ShieldHit();
             EndOfLife();
         }
     }

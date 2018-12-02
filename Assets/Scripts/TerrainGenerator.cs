@@ -63,7 +63,7 @@ public class TerrainGenerator : MonoBehaviour {
                     plfs.Add(new Platform(start, new Vector2(l1, up ? 2 : 3)));
                     plfs.Add(new Platform(start + new Vector2(l1 - 1, up ? 1 : -1), new Vector2(l2 + 1, up ? 4 : 2)));  // TODO: Extra random for asteathic positioning
                     plfs.Add(new Platform(start + new Vector2(l1 + l2, 0), new Vector2(l3, up ? 2 : 3)));
-                    Debug.Log("Flat: " + l1 + l2 + l3 + up);
+                    //Debug.Log("Flat: " + l1 + l2 + l3 + up);
                     start += new Vector2(l1 + l2 + l3, 0);
                     length -= (l1 + l2 + l3);
                 }
@@ -78,7 +78,7 @@ public class TerrainGenerator : MonoBehaviour {
                     int h = Random.Range(-1, 2);
                     plfs.Add(new Platform(start + new Vector2(0, Mathf.Min(-1, h - 1)), new Vector2(l1, 1)));
                     plfs.Add(new Platform(start + new Vector2(l1, h), new Vector2(l2, 3)));
-                    Debug.Log("Small jump: " + l1 + l2 + h);
+                    //Debug.Log("Small jump: " + l1 + l2 + h);
                     start += new Vector2(l1 + l2, h);
                     length -= (l1 + l2);
                 }
@@ -92,7 +92,7 @@ public class TerrainGenerator : MonoBehaviour {
                     plfs.Add(new Platform(start + new Vector2(0, -2), new Vector2(l1, 2)));
                     plfs.Add(new Platform(start + new Vector2(0, -1), new Vector2(1, 1)));
                     plfs.Add(new Platform(start + new Vector2(l1, 0), new Vector2(l2, 3)));
-                    Debug.Log("Big jump: " + l1 + l2);
+                    //Debug.Log("Big jump: " + l1 + l2);
                     start += new Vector2(l1 + l2, 0);
                     length -= (l1 + l2);
                 }
@@ -112,17 +112,19 @@ public class TerrainGenerator : MonoBehaviour {
                     plfs.Add(new Platform(start + new Vector2(0, down ? -1 : 0), new Vector2(l1, 2)));
                     plfs.Add(new Platform(start + new Vector2(l1 - l2 - 2, h2 + (down ? -1: 0)), new Vector2(l2, 1)));
                     plfs.Add(new Platform(start + new Vector2(l1, h1 + (down ? -1 : 0)), new Vector2(l3, h1 + 2)));
-                    Debug.Log("Climb: " + l1 + l2 + l3 + down + h1 + h2);
+                    //Debug.Log("Climb: " + l1 + l2 + l3 + down + h1 + h2);
                     start += new Vector2(l1 + l3, h1 + (down ? -1 : 0));
                     length -= (l1 + l3);
                 }
                 break;
             }
             float r = Random.value;
-            if (r > 0.75f)
+            if (r > 0.99f)
                 new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.CHARGER);
-            else if (r > 0.5f)
+            else if (r > 0.75f)
                 new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.SHOOTER);
+            else if (r > 0.25f)
+                new Spawner(start + new Vector2(0, 1), 3, Spawner.EnemyType.SHIELD);
         }
 
 
@@ -216,6 +218,17 @@ public class TerrainGenerator : MonoBehaviour {
                         enemy.transform.position = parent.position;
                         if (parent.type == EnemyType.SHOOTER)
                             enemy.GetComponent<Enemy>().projectiles = 3;
+                        else
+                            enemy.GetComponent<Enemy>().projectiles = 0;
+                        if (parent.type == EnemyType.SHIELD)
+                        {
+                            enemy.GetComponent<Enemy>().shieldMagic = 10;
+                            enemy.GetComponent<Enemy>().shieldMagicLeft = 10;
+                        } else
+                        {
+                            enemy.GetComponent<Enemy>().shieldMagic = 0;
+                            enemy.GetComponent<Enemy>().shieldMagicLeft = 0;
+                        }
                         parent.amount--;
                         if (parent.amount <= 0)
                             Destroy(gameObject);

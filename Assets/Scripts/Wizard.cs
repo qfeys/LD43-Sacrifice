@@ -20,12 +20,19 @@ public class Wizard : MonoBehaviour {
     float cooldownLeft;
     float cooldownRight;
     float cooldownSpace;
+    bool shieldActive;
 
     Rigidbody2D myridg;
+    GameObject shield;
 
-	// Use this for initialization
-	void Start () {
+    private void Awake()
+    {
         myridg = GetComponent<Rigidbody2D>();
+        shield = transform.Find("Shield").gameObject;
+    }
+
+    // Use this for initialization
+    void Start () {
         ObjectPool op = GameObject.Find("ProjectileSpawner").GetComponent<ObjectPool>();
         abilityLeft = new Ability((Vector2 pos, Vector2 trgt) =>
         {
@@ -35,6 +42,14 @@ public class Wizard : MonoBehaviour {
             Vector2 dir = (trgt - pos).normalized;
             rgb.velocity = dir * go.GetComponent<Projectile>().velocity + myridg.velocity;
             health -= 2;
+        });
+        abilitySpace = new Ability((Vector2 pos, Vector2 trgt) =>
+        {
+            shieldActive = true;
+            health -= Time.deltaTime * 2; // 2 per second
+            shield.SetActive(true);
+            Vector2 dir = (trgt - pos).normalized;
+            shield.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 45);
         });
 	}
 	
@@ -93,16 +108,38 @@ public class Wizard : MonoBehaviour {
                 myridg.velocity = new Vector2(myridg.velocity.x, jump / 2) + normal.normalized * (jump / 2);
             }
         }
+
+        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
         if (Input.GetButtonDown("Fire1") && cooldownLeft <= 0)
         {
-            abilityLeft.Fire(myridg.position, Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            abilityLeft.Fire(myridg.position, mousePos);
             cooldownLeft = abilityLeft.cooldown;
         }
+        if (Input.GetButtonDown("Fire2") && cooldownLeft <= 0)
+        {
+            abilityRight.Fire(myridg.position, mousePos);
+            cooldownLeft = abilityLeft.cooldown;
+        }
+        if (Input.GetButton("Fire3") && cooldownLeft <= 0)
+        {
+            abilitySpace.Fire(myridg.position, mousePos);
+            cooldownLeft = abilityLeft.cooldown;
+        }
+
+        if (shieldActive == false)
+            shield.SetActive(false);
+        shieldActive = false;
     }
 
     internal void GetHit(float damage)
     {
         health -= damage;
+    }
+
+    internal void ShieldHit(float damage)
+    {
+        health -= damage / 10;
     }
 
     internal void AddHealth(float health)

@@ -13,10 +13,16 @@ public class Enemy : MonoBehaviour {
     float shotCooldown = 0;
     float timeBetweenShots = 1;
 
+    public float shieldMagic = 0;
+    public float shieldMagicLeft = 0;
+    bool shieldActive = false;
+    const float TIME_BETWEEN_SHIELD_EVALUATIONS = 1.5f;
+    float timeUntillNextShieldEvaluation;
+
     float scootingTimer;
     const float TIME_FOR_SCOOT = 2;
 
-    enum Stance{DECIDING, CHARGING, SHOOTING, SHIELDING, SCOOTING }
+    enum Stance{DECIDING, CHARGING, SHOOTING, SHIELDING, SCOOTING, GUARDING }
 
     Stance stance = Stance.DECIDING;
 
@@ -27,9 +33,11 @@ public class Enemy : MonoBehaviour {
     Transform target;
 
     Rigidbody2D myridg;
+    GameObject shieldGO;
 
     static ObjectPool projectileSpawner;
     static ObjectPool dropsSpawner;
+    static Transform wizardProjectiles;
 
     private void Awake()
     {
@@ -37,23 +45,28 @@ public class Enemy : MonoBehaviour {
             dropsSpawner = GameObject.Find("DropsSpawner").GetComponent<ObjectPool>();
         if (projectileSpawner == null)
             projectileSpawner = GameObject.Find("EnemyProjectileSpawner").GetComponent<ObjectPool>();
+        if (wizardProjectiles == null)
+            wizardProjectiles = GameObject.Find("ProjectileSpawner").transform;
         myridg = GetComponent<Rigidbody2D>();
+        shieldGO = transform.Find("Shield").gameObject;
     }
 
     // Use this for initialization
     void Start () {
         target = GameObject.Find("Wizard").transform;
 	}
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update() {
 
         int move = 0; // 1 = right, -1 = left
-        switch(stance)
+        switch (stance)
         {
         case Stance.DECIDING:
             if (projectiles != 0)
                 stance = Stance.SHOOTING;
+            else if (shieldMagicLeft != 0)
+                stance = Stance.GUARDING;
             else
                 stance = Stance.CHARGING;
             break;
@@ -78,14 +91,46 @@ public class Enemy : MonoBehaviour {
             break;
         case Stance.SCOOTING:
             scootingTimer += Time.deltaTime;
-            if(scootingTimer>= TIME_FOR_SCOOT)
+            if (scootingTimer >= TIME_FOR_SCOOT)
             {
                 scootingTimer = 0;
                 stance = Stance.SHOOTING;
-                Debug.Log("Stance changed back to shooting");
                 break;
             }
             goto case Stance.CHARGING;
+        case Stance.GUARDING:
+            if (shieldActive)
+                shieldMagicLeft -= Time.deltaTime;
+            if (shieldMagicLeft <= 0)
+            {
+                shieldActive = false;
+                shieldGO.SetActive(false);
+                stance = Stance.CHARGING;
+                break;
+            }
+            timeUntillNextShieldEvaluation -= Time.deltaTime;
+            if (timeUntillNextShieldEvaluation <= 0)
+            {
+                if (AreThereIncommingProjectiles())
+                {
+                    shieldActive = true;
+                    shieldGO.SetActive(true);
+                } else
+                {
+                    shieldActive = false;
+                    shieldGO.SetActive(false);
+                }
+                timeUntillNextShieldEvaluation = TIME_BETWEEN_SHIELD_EVALUATIONS;
+            }
+            if (shieldActive)
+            {
+                if (target.position.x < transform.position.x)
+                    shieldGO.transform.rotation = Quaternion.Euler(0, 0, 90);
+                else
+                    shieldGO.transform.rotation = Quaternion.Euler(0, 0, 0);
+            } else
+                goto case Stance.CHARGING;
+            break;
         case Stance.CHARGING:
             if (target.position.x < transform.position.x)
                 move = -1;
@@ -95,42 +140,42 @@ public class Enemy : MonoBehaviour {
         }
 
         // Movement
+        {
+            float h_vel = myridg.velocity.x;
+            if (move == 1)
+            {
+                if (h_vel < speed)
+                {
+                    h_vel += acc * Time.deltaTime;
+                    if (h_vel > speed)
+                        h_vel = speed;
+                }
 
-        float h_vel = myridg.velocity.x;
-        if (move == 1)
-        {
-            if (h_vel < speed)
+            } else if (move == -1)
             {
-                h_vel += acc * Time.deltaTime;
-                if (h_vel > speed)
-                    h_vel = speed;
-            }
-
-        } else if (move == -1)
-        {
-            if (h_vel > -speed)
+                if (h_vel > -speed)
+                {
+                    h_vel -= acc * Time.deltaTime;
+                    if (h_vel < -speed)
+                        h_vel = -speed;
+                }
+            } else
             {
-                h_vel -= acc * Time.deltaTime;
-                if (h_vel < -speed)
-                    h_vel = -speed;
-            }
-        } else
-        {
-            if (h_vel > 0)
-            {
-                h_vel -= acc / 2 * Time.deltaTime;
-                if (h_vel < 0)
-                    h_vel = 0;
-            } else if (h_vel < 0)
-            {
-                h_vel += acc / 2 * Time.deltaTime;
                 if (h_vel > 0)
-                    h_vel = 0;
+                {
+                    h_vel -= acc / 2 * Time.deltaTime;
+                    if (h_vel < 0)
+                        h_vel = 0;
+                } else if (h_vel < 0)
+                {
+                    h_vel += acc / 2 * Time.deltaTime;
+                    if (h_vel > 0)
+                        h_vel = 0;
+                }
             }
+            myridg.velocity = new Vector2(h_vel, myridg.velocity.y);
         }
-        myridg.velocity = new Vector2(h_vel, myridg.velocity.y);
-
-        // Jumpoing
+        // Jumping
         if ((move == 1 && FrontBumper.IsTouchingLayers())|| (move == -1 && BackBumper.IsTouchingLayers()))
         {
             if (isGrounded)
@@ -176,7 +221,17 @@ public class Enemy : MonoBehaviour {
         Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
         rgb.velocity = dir * go.GetComponent<Projectile>().velocity + myridg.velocity;
         projectiles--;
-        Debug.Log("Firing Shot "+ go +" by " + gameObject);
+    }
+
+    private bool AreThereIncommingProjectiles()
+    {
+        for (int i = 0; i < wizardProjectiles.childCount; i++)
+        {
+            Transform projectile = wizardProjectiles.GetChild(i);
+            if (projectile.gameObject.activeSelf && (projectile.position - transform.position).magnitude < 10)
+                return true;
+        }
+        return false;
     }
 
     public void GetHit()
@@ -184,6 +239,12 @@ public class Enemy : MonoBehaviour {
         GameObject drop = dropsSpawner.GetNextObject();
         drop.transform.position = transform.position;
         gameObject.SetActive(false);
+    }
+
+    public void ShieldHit()
+    {
+        shieldMagicLeft -= 2;
+        timeUntillNextShieldEvaluation = TIME_BETWEEN_SHIELD_EVALUATIONS;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
