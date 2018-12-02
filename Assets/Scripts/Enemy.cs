@@ -13,6 +13,9 @@ public class Enemy : MonoBehaviour {
     float shotCooldown = 0;
     float timeBetweenShots = 1;
 
+    float scootingTimer;
+    const float TIME_FOR_SCOOT = 2;
+
     enum Stance{DECIDING, CHARGING, SHOOTING, SHIELDING, SCOOTING }
 
     Stance stance = Stance.DECIDING;
@@ -66,12 +69,23 @@ public class Enemy : MonoBehaviour {
                     shotCooldown = timeBetweenShots;
                     if (projectiles <= 0)
                         stance = Stance.CHARGING;
+                    else
+                        stance = Stance.SCOOTING;
                     break;
                 } else
                     stance = Stance.SCOOTING;
             }
             break;
         case Stance.SCOOTING:
+            scootingTimer += Time.deltaTime;
+            if(scootingTimer>= TIME_FOR_SCOOT)
+            {
+                scootingTimer = 0;
+                stance = Stance.SHOOTING;
+                Debug.Log("Stance changed back to shooting");
+                break;
+            }
+            goto case Stance.CHARGING;
         case Stance.CHARGING:
             if (target.position.x < transform.position.x)
                 move = -1;
@@ -79,6 +93,8 @@ public class Enemy : MonoBehaviour {
                 move = 1;
             break;
         }
+
+        // Movement
 
         float h_vel = myridg.velocity.x;
         if (move == 1)
@@ -114,6 +130,7 @@ public class Enemy : MonoBehaviour {
         }
         myridg.velocity = new Vector2(h_vel, myridg.velocity.y);
 
+        // Jumpoing
         if ((move == 1 && FrontBumper.IsTouchingLayers())|| (move == -1 && BackBumper.IsTouchingLayers()))
         {
             if (isGrounded)
@@ -159,6 +176,7 @@ public class Enemy : MonoBehaviour {
         Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
         rgb.velocity = dir * go.GetComponent<Projectile>().velocity + myridg.velocity;
         projectiles--;
+        Debug.Log("Firing Shot "+ go +" by " + gameObject);
     }
 
     public void GetHit()
