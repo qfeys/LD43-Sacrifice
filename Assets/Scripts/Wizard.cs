@@ -24,6 +24,9 @@ public class Wizard : MonoBehaviour {
     Rigidbody2D myridg;
     GameObject shield;
 
+    // Audio
+    public AudioSource shot;
+
     private void Awake()
     {
         myridg = GetComponent<Rigidbody2D>();
@@ -43,6 +46,7 @@ public class Wizard : MonoBehaviour {
             Vector2 dir = (trgt - pos).normalized;
             rgb.velocity = dir * go.GetComponent<Projectile>().velocity + myridg.velocity;
             health -= 2;
+            shot.Play();
         }); abilityRight = new Ability((Vector2 pos, Vector2 trgt) =>
         {
             GameObject go = bombSpawner.GetNextObject();

@@ -12,14 +12,15 @@ public class TerrainGenerator : MonoBehaviour {
     List<Platform> platforms;
 
     delegate void Generator(ref Vector2 start, ref float length, List<Platform> plfs);
-    enum Difficulty { V_EASY = 0, EASY = 1, MODERATE = 2, HARD = 3 }
+    enum Difficulty { V_EASY = 0, EASY = 1, MODERATE = 2, HARD = 3, V_HARD = 4 }
     List<System.Tuple<Generator, Difficulty>> generators = new List<System.Tuple<Generator, Difficulty>>() {
             new System.Tuple<Generator, Difficulty>(FlatShort, Difficulty.V_EASY),
             new System.Tuple<Generator, Difficulty>(SmallPit, Difficulty.EASY),
             new System.Tuple<Generator, Difficulty>(WidePit, Difficulty.EASY),
             new System.Tuple<Generator, Difficulty>(ClimableWall, Difficulty.HARD),
             new System.Tuple<Generator, Difficulty>(NoReturnDrop, Difficulty.MODERATE),
-            new System.Tuple<Generator, Difficulty>(StairsRight, Difficulty.MODERATE)
+            new System.Tuple<Generator, Difficulty>(StairsRight, Difficulty.MODERATE),
+            new System.Tuple<Generator, Difficulty>(StairsSteep, Difficulty.V_HARD)
         };
 
 
@@ -81,6 +82,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     List<Platform> MakeLevel(Vector2 start, float length, Difficulty levelDifficulty)
     {
+        // return MakeFlatPath(start, length);
         List<Platform> plfs = new List<Platform>();
         StagingGround(ref start, ref length, plfs);
 
@@ -120,7 +122,7 @@ public class TerrainGenerator : MonoBehaviour {
         WidePit(ref start, ref length, plfs);
         while (length > 0)
         {
-            switch (Random.Range(5, 6))
+            switch (Random.Range(6, 7))
             {
             case 0:     // flat land with a platform that sticks out (up or down)
                 FlatShort(ref start, ref length, plfs);
@@ -139,6 +141,9 @@ public class TerrainGenerator : MonoBehaviour {
                 break;
             case 5:
                 StairsRight(ref start, ref length, plfs);
+                break;
+            case 6:
+                StairsSteep(ref start, ref length, plfs);
                 break;
             }
             GenerateSpawner(start);
@@ -300,7 +305,7 @@ public class TerrainGenerator : MonoBehaviour {
     {
         // There are 3 fixed platforms, the starting pillar, the catcher and the back pillar. Other then that, there are between 2 and 5 steps
         int steps = Random.Range(2, 6);
-        // The hight of the drop and of the step of the continuation
+        // The starting piller
         plfs.Add(new Platform(start, new Vector2(2, 3)));
         int totalLength = 0;
         for (int i = 0; i < steps; i++)
@@ -311,10 +316,65 @@ public class TerrainGenerator : MonoBehaviour {
             totalLength += (gap + l);
         }
         plfs.Add(new Platform(start + new Vector2(2, -1), new Vector2(totalLength + 2, 2)));
-        plfs.Add(new Platform(start + new Vector2(2 + totalLength + 2, steps), new Vector2(2, steps + 3)));
+        plfs.Add(new Platform(start + new Vector2(2 + totalLength + 2, steps + 1), new Vector2(2, steps + 4)));
         // Debug.Log("Stars Right: " + steps + ", " + totalLength);
-        start += new Vector2(totalLength + 6, steps);
+        start += new Vector2(totalLength + 6, steps + 1);
         length -= (totalLength + 6);
+    }
+
+    /// <summary>
+    /// A couple of stairs to climb mostly up
+    /// Moderate
+    /// </summary>
+    private static void StairsSteep(ref Vector2 start, ref float length, List<Platform> plfs)
+    {
+        // There are 3 fixed platforms, the starting pillar, the catcher and the back pillar. Other then that, there are between 2 and 3 switchbacks
+        int switchbacks = Random.Range(2, 4);
+        // The starting piller
+        plfs.Add(new Platform(start, new Vector2(2, 3)));
+        int mostRightPoint = 0;
+        int currentx = 2;
+        string debug = "";
+        for (int i = 0; i < switchbacks; i++)
+        {
+            // Each switchback is made of 4 platforms
+            //  4-----
+            //          3-----
+            //                  2------
+            //          1-----
+            int gap1 = Random.Range(3, 5);
+            int l1 = Random.Range(3, 5);
+            int gap2 = Random.Range(2, 4);
+            int l2 = Random.Range(2, 4);
+            int gap3 = Random.Range(gap2, 5);
+            int l3 = Random.Range(2, 5);
+            int gap4 = Random.Range(2, 4);
+            int l4 = Random.Range(1, 3);
+            plfs.Add(new Platform(start + new Vector2(currentx + gap1, i * 4 + 1), new Vector2(l1, 1)));
+            plfs.Add(new Platform(start + new Vector2(currentx + gap1 + l1 + gap2, i * 4 + 2), new Vector2(l2, 1)));
+            plfs.Add(new Platform(start + new Vector2(currentx + gap1 + l1 + gap2 - gap3 - l3, i * 4 + 3), new Vector2(l3, 1)));
+            plfs.Add(new Platform(start + new Vector2(currentx + gap1 + l1 + gap2 - gap3 - l3 - gap4 - l4, i * 4 + 4), new Vector2(l4, 1)));
+            mostRightPoint = Mathf.Max(mostRightPoint, currentx + gap1 + l1 + gap2 + l2);
+            currentx = currentx + gap1 + l1 + gap2 - gap3 - l3 - gap4;
+            debug += "(" + gap1 + l1 + gap2 + l2 + gap3 + l3 + gap4 + l4 + ")";
+        }
+        // Finishing up the last two platforms of the half-switshback
+        {
+            int gap1 = Random.Range(2, 5);
+            int l1 = Random.Range(2, 5);
+            int gap2 = Random.Range(1, 4);
+            int l2 = Random.Range(2, 4);
+            plfs.Add(new Platform(start + new Vector2(currentx + gap1, switchbacks * 4 + 1), new Vector2(l1, 1)));
+            plfs.Add(new Platform(start + new Vector2(currentx + gap1 + l1 + gap2, switchbacks * 4 + 2), new Vector2(l2, 1)));
+            mostRightPoint = Mathf.Max(mostRightPoint, currentx + gap1 + l1 + gap2 + l2);
+            debug += "(" + gap1 + l1 + gap2 + l2 + ")";
+        }
+        // Finally the base and the end piller
+        plfs.Add(new Platform(start + new Vector2(2, -1), new Vector2(mostRightPoint - 2, 2)));
+        plfs.Add(new Platform(start + new Vector2(mostRightPoint, switchbacks * 4 + 3), new Vector2(2, switchbacks * 4 + 5)));
+        Debug.Log("Stars Steep: " + debug);
+        start += new Vector2(mostRightPoint + 2, switchbacks * 4 + 3);
+        length -= (mostRightPoint + 2);
     }
 
     class Platform
@@ -379,7 +439,7 @@ public class TerrainGenerator : MonoBehaviour {
         class SpawnerGO : MonoBehaviour
         {
             const float DISTANCE_UNTILL_ACTIVATION = 23;
-            const float TIME_TO_SPAWN_ALL = 7;
+            const float TIME_TO_SPAWN_ALL = 6;
 
             public Spawner parent;
             Transform player;

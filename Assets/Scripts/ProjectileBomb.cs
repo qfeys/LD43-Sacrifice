@@ -10,6 +10,8 @@ public class ProjectileBomb : MonoBehaviour {
 
     static ObjectPool projectilePool;
 
+    public GameObject audio;
+
     private void Awake()
     {
         if (projectilePool == null)
@@ -25,6 +27,8 @@ public class ProjectileBomb : MonoBehaviour {
 
     private void Explode()
     {
+        var go = Instantiate(audio, transform.position, Quaternion.identity);
+        Destroy(go, 0.5f);
         gameObject.SetActive(false);
         for (int i = 0; i < clusterMunitions; i++)
         {
