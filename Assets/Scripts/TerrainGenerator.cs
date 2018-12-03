@@ -51,7 +51,14 @@ public class TerrainGenerator : MonoBehaviour {
         platforms = MakeLevel(new Vector2(0, 0), levels[currentLevel].Item1, levels[currentLevel].Item2);
         platforms.ForEach(p => p.Make(terrainPool));
         currentLevel++;
-        Debug.Log("Level is now: " + currentLevel);
+    }
+
+    public void GenerateCustomLevel(int length, int difficulty)
+    {
+        terrainPool.DeactivateAllObjects();
+
+        platforms = MakeLevel(new Vector2(0, 0), length, (Difficulty)difficulty);
+        platforms.ForEach(p => p.Make(terrainPool));
     }
 
     public System.Tuple<string,string> InfoNextLevel()

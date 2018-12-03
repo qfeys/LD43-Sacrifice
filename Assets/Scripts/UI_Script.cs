@@ -10,8 +10,11 @@ public class UI_Script : MonoBehaviour {
     public GameObject wizardGO;
     public GameObject menu;
     public GameObject gameOverScreen;
+    public GameObject customLEvelEditor;
     public GameObject levelLength;
     public GameObject levelDifficulty;
+    public TMP_InputField CustomLevelLength;
+    public TMP_Dropdown CustomLevelDifficulty;
 
     Wizard wizard;
     TerrainGenerator generator;
@@ -44,6 +47,7 @@ public class UI_Script : MonoBehaviour {
     public void StartLevel()
     {
         menu.SetActive(false);
+        customLEvelEditor.SetActive(false);
         wizardGO.transform.position = new Vector3(1, 2, 0);
         wizardGO.SetActive(true);
         generator.GenerateNextLevel();
@@ -74,5 +78,27 @@ public class UI_Script : MonoBehaviour {
         GameObject.Find("DropsSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
         GameObject.Find("EnemyProjectileSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
         GameObject.Find("ProjectileSpawner").GetComponent<ObjectPool>().DeactivateAllObjects();
+    }
+
+    public void SetSeed(string arg0)
+    {
+        Debug.Log("Seed modefied: " + arg0);
+        Random.InitState(int.Parse(arg0));
+    }
+
+    public void OpenCusomLevelEditor()
+    {
+        customLEvelEditor.SetActive(!customLEvelEditor.activeSelf);
+    }
+
+    public void StartCustomLevel()
+    {
+        menu.SetActive(false);
+        customLEvelEditor.SetActive(false);
+        wizardGO.transform.position = new Vector3(1, 2, 0);
+        wizardGO.SetActive(true);
+        int length = int.Parse(CustomLevelLength.text);
+        int diff = CustomLevelDifficulty.value;
+        generator.GenerateCustomLevel(length, diff);
     }
 }
