@@ -101,4 +101,12 @@ public class UI_Script : MonoBehaviour {
         int diff = CustomLevelDifficulty.value;
         generator.GenerateCustomLevel(length, diff);
     }
+
+    public void ToggleSound()
+    {
+        if (AudioListener.volume == 1)
+            AudioListener.volume = 0;
+        else
+            AudioListener.volume = 1;
+    }
 }
