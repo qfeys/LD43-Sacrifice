@@ -20,7 +20,7 @@ public class Enemy : MonoBehaviour {
     float timeUntillNextShieldEvaluation;
 
     float scootingTimer;
-    const float TIME_FOR_SCOOT = 2;
+    const float TIME_FOR_SCOOT = 1;
 
     enum Stance{DECIDING, CHARGING, SHOOTING, SHIELDING, SCOOTING, GUARDING }
 
@@ -79,7 +79,13 @@ public class Enemy : MonoBehaviour {
                 var solution = CanYouHitTheWizard();
                 if (solution != null)
                 {
-                    Shoot(solution.Item2);
+                    if (myridg.velocity.magnitude > speed / 3)  // Wait untill you are standing more or less still
+                        break;
+                    RaycastHit2D rch = Physics2D.Raycast(transform.position, target.position - transform.position, 20, LayerMask.GetMask("Wizard", "Terrain"));
+                    if (rch.collider.gameObject.layer == LayerMask.NameToLayer("Wizard"))
+                        Shoot(solution.Item1);
+                    else
+                        Shoot(solution.Item2);
                     shotCooldown = timeBetweenShots;
                     if (projectiles <= 0)
                         stance = Stance.CHARGING;
